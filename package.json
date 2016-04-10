@@ -3,10 +3,12 @@
   "version": "0.0.1",
   "author": "William Martin",
   "dependencies": {
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "mongoose": "^4.4.12",
+    "path": "^0.12.7"
   },
   "engines": {
-    "node": "4.2.3",
-    "npm": "2.14.7"
+    "node": "5.10.0",
+    "npm": "3.8.3"
   }
 }
