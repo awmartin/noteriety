@@ -1,0 +1,28 @@
+.notes-ui {
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+}
+
+.notes-form textarea {
+  min-height: 500px;
+}
+
+.note {
+  border-top: 1px solid lightgray;
+}
+
+.new-note-button {
+  float: right;
+}
+
+h1 {
+  font-size: 2.0rem;
+}
+h2 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+h3 {
+  font-size: 1.6rem;
+  margin: 0;
+}

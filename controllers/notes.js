@@ -17,7 +17,53 @@ var getNote = function(req, res) {
   });
 };
 
+var createNote = function(req, res) {
+  var newNote = new Note({
+    title: "Untitled note",
+    content: ""
+  });
+
+  var onComplete = function(err) {
+    if (err) {
+      console.error(err);
+      res.status(500);
+    } else {
+      res.json(newNote);
+    }
+  };
+
+  newNote.save(onComplete);
+};
+
+var updateNote = function(req, res) {
+  var onFind = function(err, note) {
+    if (err) {
+      res.status(500);
+      return;
+    }
+
+    if (req.body.title) {
+      note.title = req.body.title;
+    }
+    if (req.body.content) {
+      note.content = req.body.content;
+    }
+
+    note.save(function(err) {
+      if (err) {
+        res.status(500);
+      } else {
+        res.send(note);
+      }
+    })
+  };
+
+  Note.findById(req.params.id, onFind);
+};
+
 module.exports = {
   getAllNotes: getAllNotes,
-  getNote: getNote
+  getNote: getNote,
+  createNote: createNote,
+  updateNote: updateNote
 };
