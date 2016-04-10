@@ -1,0 +1,12 @@
+{
+  "name": "Notoriety",
+  "version": "0.0.1",
+  "author": "William Martin",
+  "dependencies": {
+    "express": "^4.13.4"
+  },
+  "engines": {
+    "node": "4.2.3",
+    "npm": "2.14.7"
+  }
+}
