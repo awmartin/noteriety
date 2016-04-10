@@ -7,7 +7,8 @@ var notesController = require('./controllers/notes');
 
 var app = express();
 
-mongoose.connect('mongodb://localhost/notoriety'); //process.env.MONGODB || process.env.MONGOLAB_URI);
+var localMongoDB = 'mongodb://localhost/notoriety';
+mongoose.connect(process.env.MONGODB || process.env.MONGOLAB_URI || localMongoDB);
 mongoose.connection.on('error', function() {
   console.log('MongoDB Connection Error. Please make sure that MongoDB is running.');
   process.exit(1);
@@ -34,6 +35,7 @@ app.get('/api/notes', notesController.getAllNotes);
 app.get('/api/notes/:id', notesController.getNote);
 app.post('/api/notes', notesController.createNote);
 app.post('/api/notes/:id', notesController.updateNote);
+app.delete('/api/notes/:id', notesController.deleteNote);
 // ---------------------------------------------------------------------------------------
 
 

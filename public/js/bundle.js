@@ -96,7 +96,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var $ = require('jquery');
 
-// Props: note, key
+// Props: note, [key], onSelectNote, isSelected
 var Note = React.createClass({
   displayName: 'Note',
 
@@ -105,9 +105,13 @@ var Note = React.createClass({
   },
 
   render: function () {
+    var className = 'note';
+    if (this.props.isSelected) {
+      className += ' selected';
+    }
     return React.createElement(
       'div',
-      { className: 'note' },
+      { className: className },
       React.createElement(
         'h3',
         null,
@@ -116,22 +120,23 @@ var Note = React.createClass({
           { href: '#', onClick: this.onSelectNote },
           this.props.note.title
         )
-      ),
-      React.createElement(
-        'div',
-        null,
-        this.props.note.content
       )
     );
   }
 });
 
+// Props: data, selectedNote, onSelecteNote
 var NotesList = React.createClass({
   displayName: 'NotesList',
 
   render: function () {
     var noteGenerator = function (note) {
-      return React.createElement(Note, { note: note, key: note._id, onSelectNote: this.props.onSelectNote });
+      var isSelected = false;
+      if (this.props.selectedNote) {
+        isSelected = note._id === this.props.selectedNote._id;
+      }
+
+      return React.createElement(Note, { note: note, key: note._id, onSelectNote: this.props.onSelectNote, isSelected: isSelected });
     }.bind(this);
 
     var notes = this.props.data.map(noteGenerator);
@@ -144,6 +149,7 @@ var NotesList = React.createClass({
   }
 });
 
+// Props: selectedNote, onSelectNote, onDeleteNote
 var NotesForm = React.createClass({
   displayName: 'NotesForm',
 
@@ -158,7 +164,6 @@ var NotesForm = React.createClass({
     };
 
     var onSuccess = function (data) {
-      console.log("Success", data);
       this.props.onUpdateNote(data);
     }.bind(this);
 
@@ -177,12 +182,34 @@ var NotesForm = React.createClass({
     });
   },
 
-  onTitleChange: function (e) {
-    this.setState({ title: e.target.value });
+  onTitleChange: function (event) {
+    this.setState({ title: event.target.value });
   },
 
-  onContentChange: function (e) {
-    this.setState({ content: e.target.value });
+  onContentChange: function (event) {
+    this.setState({ content: event.target.value });
+  },
+
+  onDeleteNote: function (event) {
+    event.preventDefault();
+    var id = this.props.selectedNote._id;
+
+    var onSuccess = function (data) {
+      this.props.onDeleteNote({ _id: id });
+    }.bind(this);
+
+    var onError = function (xhr, status, err) {
+      console.error(status, err);
+    }.bind(this);
+
+    $.ajax({
+      url: '/api/notes/' + id,
+      method: 'DELETE',
+      dataType: 'json',
+      cache: false,
+      success: onSuccess,
+      error: onError
+    });
   },
 
   getInitialState: function () {
@@ -219,7 +246,12 @@ var NotesForm = React.createClass({
         onChange: this.onContentChange,
         style: { width: '100%' }
       }),
-      React.createElement('input', { type: 'submit', value: 'Save' })
+      React.createElement('input', { type: 'submit', value: 'Save' }),
+      React.createElement(
+        'a',
+        { href: '#', onClick: this.onDeleteNote, className: 'delete-note-button' },
+        'Delete'
+      )
     );
   }
 });
@@ -230,19 +262,15 @@ var NotesUI = React.createClass({
   getNotes: function () {
     var onSuccess = function (notesJson) {
       this.setState({ data: notesJson });
-
-      if (notesJson.length > 0) {
-        var firstNote = notesJson[0];
-        this.onSelectNote(firstNote._id);
-      }
+      this.selectFirstNote();
     }.bind(this);
 
     var onError = function (xhr, status, err) {
-      console.error(this.props.url, status, err.toString());
+      console.error(status, err.toString());
     }.bind(this);
 
     $.ajax({
-      url: this.props.url,
+      url: '/api/notes',
       dataType: 'json',
       cache: false,
       success: onSuccess,
@@ -250,12 +278,22 @@ var NotesUI = React.createClass({
     });
   },
 
+  selectFirstNote: function () {
+    if (this.state.data.length > 0) {
+      var firstNote = this.state.data[0];
+      this.onSelectNote(firstNote._id);
+    }
+  },
+
   onNewNote: function (event) {
+    event.preventDefault();
+
     var onSuccess = function (data) {
       var newNotes = this.state.data.concat(data);
       this.setState({
         data: newNotes
       });
+      this.onSelectNote(data._id);
     }.bind(this);
 
     var onError = function (xhr, status, err) {
@@ -302,6 +340,22 @@ var NotesUI = React.createClass({
     });
   },
 
+  onDeleteNote: function (note) {
+    var noteIds = this.state.data.map(function (n) {
+      return n._id;
+    });
+    var deletedNoteIndex = noteIds.indexOf(note._id);
+
+    var left = this.state.data.slice(0, deletedNoteIndex);
+    var right = this.state.data.slice(deletedNoteIndex + 1);
+    var updatedNotes = left.concat(right);
+
+    this.setState({
+      data: updatedNotes
+    });
+    this.selectFirstNote();
+  },
+
   getInitialState: function () {
     return {
       data: [],
@@ -314,8 +368,6 @@ var NotesUI = React.createClass({
   },
 
   render: function () {
-    console.log("NotesUI.render");
-
     var selectedNote = this.getNote(this.state.selectedNoteId);
 
     return React.createElement(
@@ -325,27 +377,31 @@ var NotesUI = React.createClass({
         'div',
         { className: 'four columns' },
         React.createElement(
-          'a',
-          { href: '#', className: 'new-note-button', onClick: this.onNewNote },
-          'New Note'
+          'div',
+          { className: 'notes-list-header' },
+          React.createElement(
+            'a',
+            { href: '#', className: 'new-note-button', onClick: this.onNewNote },
+            'New Note'
+          ),
+          React.createElement(
+            'h2',
+            null,
+            'Notes'
+          )
         ),
-        React.createElement(
-          'h2',
-          null,
-          'Notes'
-        ),
-        React.createElement(NotesList, { data: this.state.data, onSelectNote: this.onSelectNote })
+        React.createElement(NotesList, { data: this.state.data, selectedNote: selectedNote, onSelectNote: this.onSelectNote })
       ),
       React.createElement(
         'div',
         { className: 'eight columns' },
-        React.createElement(NotesForm, { url: '/api/notes', selectedNote: selectedNote, onUpdateNote: this.onUpdateNote })
+        React.createElement(NotesForm, { selectedNote: selectedNote, onUpdateNote: this.onUpdateNote, onDeleteNote: this.onDeleteNote })
       )
     );
   }
 });
 
-ReactDOM.render(React.createElement(NotesUI, { url: '/api/notes' }), document.getElementById('notes'));
+ReactDOM.render(React.createElement(NotesUI, null), document.getElementById('notes'));
 
 },{"jquery":29,"react":167,"react-dom":31}],3:[function(require,module,exports){
 (function (process){

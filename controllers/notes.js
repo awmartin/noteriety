@@ -1,23 +1,34 @@
 var Note = require('../models/Note');
 
 var getAllNotes = function(req, res) {
+  console.log("Getting all the notes in the database.");
+
   Note.find({}).exec(function(err, notes) {
     if (err) {
       console.error(err);
       res.json([]);
     } else {
+      console.log("Query successful. Returning", notes);
       res.json(notes);
     }
   });
 };
 
 var getNote = function(req, res) {
-  res.json({
-    id: req.params.id
-  });
+  var onFind = function(err, note) {
+    if (err) {
+      res.status(500);
+    } else {
+      res.send(note);
+    }
+  };
+
+  Note.findById(req.params.id, onFind);
 };
 
 var createNote = function(req, res) {
+  console.log("Attempting to create a new note.");
+
   var newNote = new Note({
     title: "Untitled note",
     content: ""
@@ -25,9 +36,10 @@ var createNote = function(req, res) {
 
   var onComplete = function(err) {
     if (err) {
-      console.error(err);
+      console.error("Error creating a note", err);
       res.status(500);
     } else {
+      console.log("Successfully created note:", newNote);
       res.json(newNote);
     }
   };
@@ -36,6 +48,8 @@ var createNote = function(req, res) {
 };
 
 var updateNote = function(req, res) {
+  console.log("Updating note", req.params.id, 'with', req.body);
+
   var onFind = function(err, note) {
     if (err) {
       res.status(500);
@@ -51,8 +65,10 @@ var updateNote = function(req, res) {
 
     note.save(function(err) {
       if (err) {
+        console.error("Error updating note", req.params.id, err);
         res.status(500);
       } else {
+        console.log("Successfully updated note", note);
         res.send(note);
       }
     })
@@ -61,9 +77,31 @@ var updateNote = function(req, res) {
   Note.findById(req.params.id, onFind);
 };
 
+var deleteNote = function(req, res) {
+  console.log("Deleting note", req.params.id);
+
+  var id = req.params.id;
+  var onRemove = function(err) {
+    if (err) {
+      console.error("Error while deleting note,", req.params.id, err);
+      res.status(500);
+    } else {
+      console.log("Successfully deleted note", req.params.id);
+      res.json({
+        _id: req.params.id
+      });
+    }
+  };
+
+  Note.remove({
+    _id: id
+  }, onRemove);
+};
+
 module.exports = {
   getAllNotes: getAllNotes,
   getNote: getNote,
   createNote: createNote,
-  updateNote: updateNote
+  updateNote: updateNote,
+  deleteNote: deleteNote
 };
