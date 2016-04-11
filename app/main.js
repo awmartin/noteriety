@@ -51,7 +51,7 @@ var NotesList = React.createClass({
 
 // Props: selectedNote, onSelectNote, onDeleteNote
 var NotesForm = React.createClass({
-  onSubmit: function(event) {
+  onSave: function(event) {
     event.preventDefault();
 
     var title = (this.state.title || this.props.selectedNote.title);
@@ -69,12 +69,18 @@ var NotesForm = React.createClass({
       console.error(status, err);
     }.bind(this);
 
+    var url = '/api/notes';
+    var method = 'POST';
+    if (this.props.selectedNote) {
+      url = '/api/notes/' + this.props.selectedNote._id;
+      method = 'PUT';
+    }
+
     $.ajax({
-      url: '/api/notes/' + this.props.selectedNote._id,
-      method: 'POST',
+      url: url,
+      method: method,
       dataType: 'json',
       data: postData,
-      cache: false,
       success: onSuccess,
       error: onError
     });
@@ -104,7 +110,6 @@ var NotesForm = React.createClass({
       url: '/api/notes/' + id,
       method: 'DELETE',
       dataType: 'json',
-      cache: false,
       success: onSuccess,
       error: onError
     });
@@ -123,12 +128,17 @@ var NotesForm = React.createClass({
         title: props.selectedNote.title,
         content: props.selectedNote.content
       });
+    } else {
+      this.setState({
+        title: null,
+        content: null
+      });
     }
   },
 
   render: function() {
     return (
-      <form className="notes-form" onSubmit={this.onSubmit}>
+      <form className="notes-form" onSubmit={this.onSave}>
         <input
           type="text"
           placeholder="Untitled note"
@@ -176,7 +186,15 @@ var NotesUI = React.createClass({
     if (this.state.data.length > 0) {
       var firstNote = this.state.data[0];
       this.onSelectNote(firstNote._id);
+    } else {
+      this.onSelectNote(null);
     }
+  },
+
+  onSelectNote: function(noteId) {
+    this.setState({
+      selectedNoteId: noteId
+    });
   },
 
   onNewNote: function(event) {
@@ -197,14 +215,9 @@ var NotesUI = React.createClass({
     $.ajax({
       url: '/api/notes',
       method: 'POST',
+      data: {title: 'Untitled note', content: ''},
       success: onSuccess,
       error: onError
-    });
-  },
-
-  onSelectNote: function(noteId) {
-    this.setState({
-      selectedNoteId: noteId
     });
   },
 
@@ -220,16 +233,26 @@ var NotesUI = React.createClass({
     return selectedNote;
   },
 
+  // When a note is updated, update the note in the given array of data, the set the state.
   onUpdateNote: function(note) {
     var noteIds = this.state.data.map(function(n){ return n._id; });
     var selectedNoteIndex = noteIds.indexOf(note._id);
 
     var updatedNotes = this.state.data;
-    updatedNotes[selectedNoteIndex] = note;
+    var isNewNote = selectedNoteIndex === -1;
+    if (isNewNote) {
+      updatedNotes = [note];
+    } else {
+      updatedNotes[selectedNoteIndex] = note;
+    }
 
     this.setState({
       data: updatedNotes
     });
+
+    if (isNewNote) {
+      this.onSelectNote(note._id);
+    }
   },
 
   onDeleteNote: function(note) {

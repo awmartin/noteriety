@@ -34,7 +34,7 @@ app.use('/', express.static(path.join(__dirname, 'public')));
 app.get('/api/notes', notesController.getAllNotes);
 app.get('/api/notes/:id', notesController.getNote);
 app.post('/api/notes', notesController.createNote);
-app.post('/api/notes/:id', notesController.updateNote);
+app.put('/api/notes/:id', notesController.updateNote);
 app.delete('/api/notes/:id', notesController.deleteNote);
 // ---------------------------------------------------------------------------------------
 

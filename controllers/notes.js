@@ -27,12 +27,9 @@ var getNote = function(req, res) {
 };
 
 var createNote = function(req, res) {
-  console.log("Attempting to create a new note.");
+  console.log("Attempting to create a new note:", JSON.stringify(req.body));
 
-  var newNote = new Note({
-    title: "Untitled note",
-    content: ""
-  });
+  var newNote = new Note(req.body);
 
   var onComplete = function(err) {
     if (err) {
