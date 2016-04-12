@@ -7,7 +7,7 @@ var notesController = require('./controllers/notes');
 
 var app = express();
 
-var localMongoDB = 'mongodb://localhost/notoriety';
+var localMongoDB = 'mongodb://localhost/noteriety';
 mongoose.connect(process.env.MONGODB || process.env.MONGODB_URI || process.env.MONGOLAB_URI ||
   localMongoDB);
 mongoose.connection.on('error', function() {
