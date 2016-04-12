@@ -154,7 +154,13 @@ var NotesForm = React.createClass({
   displayName: 'NotesForm',
 
   onSave: function (event) {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
+
+    if (!this.props.selectedNote) {
+      return;
+    }
 
     var title = this.state.title || this.props.selectedNote.title;
     var content = this.state.content || this.props.selectedNote.content;
@@ -224,6 +230,37 @@ var NotesForm = React.createClass({
     };
   },
 
+  saveIfNecessary: function () {
+    if (!this.props.selectedNote) {
+      return;
+    }
+
+    var diff = false;
+    diff = diff || this.state.title !== this.props.selectedNote.title;
+    diff = diff || this.state.content !== this.props.selectedNote.content;
+    if (diff) {
+      this.onSave();
+    }
+  },
+
+  componentDidMount: function () {
+    setInterval(this.saveIfNecessary, 2000);
+  },
+
+  componentWillUpdate: function (nextProps, nextState) {
+    if (!nextProps.selectedNote) {
+      return;
+    }
+    if (!this.props.selectedNote) {
+      return;
+    }
+
+    var changingNotes = nextProps.selectedNote._id !== this.props.selectedNote._id;
+    if (changingNotes) {
+      this.saveIfNecessary();
+    }
+  },
+
   componentWillReceiveProps: function (props) {
     if (props.selectedNote) {
       this.setState({
@@ -241,22 +278,23 @@ var NotesForm = React.createClass({
   render: function () {
     return React.createElement(
       'form',
-      { className: 'notes-form', onSubmit: this.onSave },
+      { className: 'notes-form' },
       React.createElement('input', {
         type: 'text',
         placeholder: 'Untitled note',
         value: this.state.title || '',
         onChange: this.onTitleChange,
-        style: { width: '100%' }
+        style: { width: '100%' },
+        disabled: !this.props.selectedNote
       }),
       React.createElement('textarea', {
         type: 'text',
         placeholder: 'Details here.',
         value: this.state.content || '',
         onChange: this.onContentChange,
-        style: { width: '100%' }
+        style: { width: '100%' },
+        disabled: !this.props.selectedNote
       }),
-      React.createElement('input', { type: 'submit', value: 'Save' }),
       React.createElement(
         'a',
         { href: '#', onClick: this.onDeleteNote, className: 'delete-note-button' },
