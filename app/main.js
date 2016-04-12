@@ -55,14 +55,15 @@ var NotesForm = React.createClass({
     if (event) {
       event.preventDefault();
     }
+    this.save(this.state);
+  },
 
-    if (!this.props.selectedNote) { return; }
+  save: function(state) {
+    if (!state._id) { return; }
 
-    var title = (this.state.title || this.props.selectedNote.title);
-    var content = (this.state.content || this.props.selectedNote.content);
     var postData = {
-      title: title.trim(),
-      content: content.trim()
+      title: state.title.trim(),
+      content: state.content.trim()
     };
 
     var onSuccess = function(data) {
@@ -73,12 +74,8 @@ var NotesForm = React.createClass({
       console.error(status, err);
     }.bind(this);
 
-    var url = '/api/notes';
-    var method = 'POST';
-    if (this.props.selectedNote) {
-      url = '/api/notes/' + this.props.selectedNote._id;
-      method = 'PUT';
-    }
+    var url = '/api/notes/' + state._id;
+    var method = 'PUT';
 
     $.ajax({
       url: url,
@@ -121,19 +118,22 @@ var NotesForm = React.createClass({
 
   getInitialState: function() {
     return {
-      title: null,
-      content: null
+      title: '',
+      content: '',
+      _id: null
     };
   },
 
   saveIfNecessary: function() {
     if (!this.props.selectedNote) { return; }
 
-    var diff = false;
-    diff = diff || (this.state.title !== this.props.selectedNote.title);
-    diff = diff || (this.state.content !== this.props.selectedNote.content);
-    if (diff) {
-      this.onSave();
+    var savingTheCurrentNote = this.props.selectedNote._id === this.state._id;
+    if (!savingTheCurrentNote) { return; }
+
+    var changedTitle = this.state.title !== this.props.selectedNote.title;
+    var changedContent = this.state.content !== this.props.selectedNote.content;
+    if (changedTitle || changedContent) {
+      this.save(this.state);
     }
   },
 
@@ -142,25 +142,37 @@ var NotesForm = React.createClass({
   },
 
   componentWillUpdate: function(nextProps, nextState) {
-    if (!nextProps.selectedNote) { return; }
-    if (!this.props.selectedNote) { return; }
-
-    var changingNotes = nextProps.selectedNote._id !== this.props.selectedNote._id;
-    if (changingNotes) {
-      this.saveIfNecessary();
+    // When we're switching notes, save the current one.
+    if (!!nextProps.selectedNote && !!this.props.selectedNote) {
+      if (nextProps.selectedNote._id !== this.props.selectedNote._id) {
+        this.save(this.state);
+      }
     }
   },
 
-  componentWillReceiveProps: function(props) {
-    if (props.selectedNote) {
+  componentWillReceiveProps: function(newProps) {
+    // We don't know anything, so abort.
+    if (!newProps.selectedNote && !this.props.selectedNote) { return; }
+
+    // Loading a note from scratch.
+    if (newProps.selectedNote && !this.props.selectedNote) {
       this.setState({
-        title: props.selectedNote.title,
-        content: props.selectedNote.content
+        title: newProps.selectedNote.title,
+        content: newProps.selectedNote.content,
+        _id: newProps.selectedNote._id
       });
-    } else {
+      return;
+    }
+
+    // At this point, we've handled the cases in which we don't know the selected note. Abort.
+    if (!this.props.selectedNote) { return; }
+
+    // We're about to load a different note, so set the current state.
+    if (newProps.selectedNote._id !== this.props.selectedNote._id) {
       this.setState({
-        title: null,
-        content: null
+        title: newProps.selectedNote.title,
+        content: newProps.selectedNote.content,
+        _id: newProps.selectedNote._id
       });
     }
   },
@@ -255,7 +267,7 @@ var NotesUI = React.createClass({
     var selectedNote = null;
     for (var i=0, len=this.state.data.length; i<len; i++) {
       var note = this.state.data[i];
-      if (note._id == noteId) {
+      if (note._id === noteId) {
         selectedNote = note;
         break;
       }

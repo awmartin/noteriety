@@ -53,10 +53,10 @@ var updateNote = function(req, res) {
       return;
     }
 
-    if (req.body.title) {
+    if (req.body.title != null) {
       note.title = req.body.title;
     }
-    if (req.body.content) {
+    if (req.body.content != null) {
       note.content = req.body.content;
     }
 
