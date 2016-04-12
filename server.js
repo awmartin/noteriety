@@ -8,7 +8,8 @@ var notesController = require('./controllers/notes');
 var app = express();
 
 var localMongoDB = 'mongodb://localhost/notoriety';
-mongoose.connect(process.env.MONGODB || process.env.MONGOLAB_URI || localMongoDB);
+mongoose.connect(process.env.MONGODB || process.env.MONGODB_URI || process.env.MONGOLAB_URI ||
+  localMongoDB);
 mongoose.connection.on('error', function() {
   console.log('MongoDB Connection Error. Please make sure that MongoDB is running.');
   process.exit(1);
