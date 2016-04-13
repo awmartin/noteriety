@@ -275,7 +275,7 @@ var NotesForm = React.createClass({
     }
 
     // At this point, we've handled the cases in which we don't know the selected note. Abort.
-    if (!this.props.selectedNote) {
+    if (!this.props.selectedNote || !newProps.selectedNote) {
       return;
     }
 
