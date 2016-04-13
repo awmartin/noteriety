@@ -1,2 +1,4 @@
 applications:
 - name: noteriety
+  buildpack: https://github.com/cloudfoundry/nodejs-buildpack
+  
